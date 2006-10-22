@@ -1,0 +1,22 @@
+---
+name: DateTime-Natural-Parse
+version: 0.01
+author:
+  - 'Steven Schubiger <schubiger@cpan.org>'
+abstract: Create machine readable time with natural parsing logic
+license: perl
+build_requires:
+  Test::More: 0
+recommends:
+  Test::Pod: 1.14
+  Test::Pod::Coverage: 1.04
+generated_by: Module::Build version 0.2805
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2
+provides:
+  DateTime::Natural::Parse:
+    file: lib/DateTime/Natural/Parse.pm
+    version: 0.01
+resources:
+  license: http://dev.perl.org/licenses/
