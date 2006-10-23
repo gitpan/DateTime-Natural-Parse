@@ -4,9 +4,11 @@ use strict;
 use warnings;
 use base qw(Exporter);
 
+use DateTime;
+
 our ($VERSION, @EXPORT_OK);
 
-$VERSION = '0.01';
+$VERSION = '0.02';
 @EXPORT_OK = qw(natural_parse);
 
 sub natural_parse {
@@ -21,12 +23,8 @@ sub natural_parse {
     my ($sec, $min, $hour, $day, $month, $year, $wday, $yday) = localtime;
     $month++; $year += 1900;
 
-    foreach my $token (@tokens) {
-        print "$token\n" if $DEBUG;
-
-        my %days = (Tomorrow  => 'day plus 1',
-                    Yesterday => 'day minus 1',
-                    Today     => 'day');
+    for (my $i = 0; $i < @tokens; $i++) {
+        print "$tokens[$i]\n" if $DEBUG;
 
         my %weekdays = (Monday    => 1,
 	                Tuesday   => 2,
@@ -61,98 +59,159 @@ sub natural_parse {
 	                 10 => 31,
 	                 11 => 30,
 	                 12 => 31);
+
+	no warnings 'uninitialized';
 	
-        if ($token =~ /^(?:morning|evening)$/) {
-	    if ($token eq 'morning') {
-	        $hour = '08';
-	    } else {
-	        $hour = '20';
+        if ($tokens[$i] =~ /^(?:morning|afternoon|evening)$/) {
+	    my $hour_token;
+	    if ($tokens[$i-3] =~ /\d/ and $tokens[$i-2] =~ /^in$/i and $tokens[$i-1] =~ /^the$/i) {
+		$hour_token = $tokens[$i-3];
+	    }
+	    if ($tokens[$i] =~ /^morning$/i) {
+	        $hour = $hour_token ? $hour_token : '08';
+	    } elsif ($tokens[$i] =~ /^afternoon$/i) {
+		$hour = $hour_token ? $hour_token + 12 : '14';
+            } else {
+	        $hour = $hour_token ? $hour_token + 12 : '20';
 	    }
 	    $min = '00';
         }
 
-        if ($token eq 'at') {
+        if ($tokens[$i] eq 'at') {
 	    next;
-        } elsif ($token =~ /^(\d{1,2})(:\d{2}|am|pm)$/) {
+        } elsif ($tokens[$i] =~ /^(\d{1,2})(:\d{2})?(am|pm)?$/) {
             my $hour_token = $1; my $min_token = $2;
-	    if ($min_token =~ /:/) {
-	        $hour = $hour_token; 
-	        $min_token =~ s!:!!;
-	        $min  = $min_token;
-	    } elsif ($min_token =~ /(am|pm)/) {
-	        if ($min_token eq 'pm') {
+	    my $timeframe = $3;
+	    $hour = $hour_token; 
+	    $min_token =~ s!:!!;
+	    $min  = $min_token || '00';
+	    if ($timeframe) {	        
+	        if ($timeframe eq 'pm') {
                     $hour_token += 12;
-	        }
-	        $hour = $hour_token;
-	        $min  = '00';
+                    $hour = $hour_token;
+	            $min  = '00' unless $min_token;
+                }
 	    }
         }
     
-        if ($token =~ /^(\d{1,2})(?:st|nd|rd|th)$/) {
+        if ($tokens[$i] =~ /^(\d{1,2})(?:st|nd|rd|th)$/) {
 	    $day = $1;
         }
 
         foreach my $key_month (keys %months) {
-	    if ($token =~ /$key_month/i) {
+	    if ($tokens[$i] =~ /$key_month/i) {
 	        $month = $months{$key_month};
 	        last;
 	    }
         }
 
-        if ($token eq 'this') {
+	if ($tokens[$i] =~ /^\d{4}$/) {
+	    $year = $tokens[$i];
+	}
+	
+        if ($tokens[$i-1] !~ /^(?:this|next|last)$/i && $tokens[$i+1] !~ /^(?:this|next|last)$/i) {
+	    foreach my $key_weekday (keys %weekdays) {
+		my $weekday_short = lc(substr($key_weekday,0,3));
+	        if ($tokens[$i] =~ /$key_weekday/i || $tokens[$i] eq $weekday_short) {
+		    my $days_diff = $weekdays{$key_weekday} - $wday;
+		    $day += $days_diff;
+		    last;
+		}
+	    }
+        }
+
+        if ($tokens[$i] =~ /^this$/i) {
 	    $buffer = 'this';
 	    next;
         } elsif ($buffer eq 'this') {
             foreach my $key_weekday (keys %weekdays) {
-                if ($token =~ /$key_weekday/i) {
+                my $weekday_short = lc(substr($key_weekday,0,3));
+                if ($tokens[$i] =~ /$key_weekday/i || $tokens[$i] eq $weekday_short) {
 	            my $days_diff = $weekdays{$key_weekday} - $wday;
-	            $day += $days_diff;
+	            $day += $days_diff; $buffer = '';
+		    last;
 	        }
+		if ($tokens[$i] =~ /^week$/i) {
+		    my $weekday = ucfirst(lc($tokens[$i-2]));
+		    my $days_diff = $weekdays{$weekday} - $wday;
+		    $day += $days_diff; $buffer = '';
+		    last;
+		}
             }
         }
 
-	if ($token eq 'next') {
+	if ($tokens[$i] =~ /^next$/i) {
 	    $buffer = 'next';
 	    next;
 	} elsif ($buffer eq 'next') {
 	    foreach my $key_weekday (keys %weekdays) {
-	        if ($token =~ /$key_weekday/i) {
+                my $weekday_short = lc(substr($key_weekday,0,3));
+	        if ($tokens[$i] =~ /$key_weekday/i || $tokens[$i] eq $weekday_short) {
 		    my $days_diff = (7 - $wday) + $weekdays{$key_weekday};
-		    $day += $days_diff;
-		    if ($day > $monthdays{$month}) {
-		        my $days_next_month = $day - $monthdays{$month};
-			$month++; $day = $days_next_month;
-		    }
+		    $day += $days_diff; $buffer = '';
+		    last;
 		}
+		if ($tokens[$i] =~ /^week$/i) {
+		    my $weekday = ucfirst(lc($tokens[$i-2]));
+		    my $days_diff = (7 - $wday) + $weekdays{$weekday};
+		    $day += $days_diff; $buffer = '';
+		    last;
+		}
+                if ($tokens[$i] =~ /^month$/i) {
+		    $month++;
+		    last;
+	        }
             }
 	}	   
 	
-        if ($token eq 'last') {
+        if ($tokens[$i] =~ /^last$/i) {
 	    $buffer = 'last';
 	    next;
 	} elsif ($buffer eq 'last') {
 	    foreach my $key_weekday (keys %weekdays) {
-	        if ($token =~ /$key_weekday/i) {
+		my $weekday_short = lc(substr($key_weekday,0,3));
+	        if ($tokens[$i] =~ /$key_weekday/i || $tokens[$i] eq $weekday_short) {
 		    my $days_diff = $wday + (7 - $weekdays{$key_weekday});
-		    $day -= $days_diff;
+		    $day -= $days_diff; $buffer = '';
+		    last;
 		}
 	    }
+	    
+            if ($tokens[$i] =~ /^week$/i) {
+                if (exists $weekdays{ucfirst(lc($tokens[$i+1]))}) {
+		    my $weekday = ucfirst(lc($tokens[$i+1]));
+		    my $days_diff = $wday + (7 - $weekdays{$weekday});
+		    $day -= $days_diff; $buffer = '';
+		    last;
+		} elsif (exists $weekdays{ucfirst(lc($tokens[$i-2]))}) {
+		    my $weekday = ucfirst(lc($tokens[$i-2]));
+		    my $days_diff = $wday + (7 - $weekdays{$weekday});
+		    $day -= $days_diff; $buffer = '';
+		    last;
+		}
+	    }    
+
+            if ($tokens[$i] =~ /^month$/i) {
+                $month--;
+		last;
+	    }
+	}
+
+        if ($day > $monthdays{$month}) {
+	    my $days_next_month = $day - $monthdays{$month};
+	    $month++; $day = $days_next_month;
+	    last;
+	} elsif ($day < 1) {
+	    # this branch needs some provement XXX
+	    my $days_last_month = $monthdays{$month-1} - $day;
+	    $month--; $day = $days_last_month;
+	    last;
 	}
 	
-        foreach my $key_day (keys %days) {
-            if ($token =~ /$key_day/i) {
-                my $dostr = $days{$key_day};
-
-                my ($var, $op, $val) = $dostr =~ /(.*?) (.*?) (.*)/;
-                if (defined($var) && defined($op) && defined($val)) {
-                    if ($op eq 'plus') {
-                        $day += $val;
-                    } elsif ($op eq 'minus') {
-                        $day -= $val;
-                    }
-                }
-            }
-        }
+        if ($tokens[$i] =~ /^(?:today|yesterday|tomorrow)$/i) {
+	    $day-- if $tokens[$i] =~ /^yesterday$/i;
+	    $day++ if $tokens[$i] =~ /^tomorrow$/i;
+	}
     }
 
     $sec   = "0$sec"   unless length($sec)   == 2;
@@ -161,7 +220,14 @@ sub natural_parse {
     $day   = "0$day"   unless length($day)   == 2;
     $month = "0$month" unless length($month) == 2;
 
-    return "$day.$month.$year $hour:$min\n";
+    my $dt = DateTime->new(year   => $year,
+                           month  => $month,
+                           day    => $day,
+                           hour   => $hour,
+                           minute => $min,
+                           second => $sec);
+
+    return $dt;
 }
 
 1;
@@ -169,25 +235,59 @@ __END__
 
 =head1 NAME
 
-DateTime::Natural::Parse - Create machine readable time with natural parsing logic
+DateTime::Natural::Parse - Create machine readable date/time with natural parsing logic
 
 =head1 SYNOPSIS
 
  use DateTime::Natural::Parse qw(natural_parse);
 
- print natural_parse($date_string);
+ $dt = natural_parse($date_string);
 
 =head1 DESCRIPTION
 
-C<DateTime::Natural::Parse> exports a function, natural_parse(), by default which takes a
-string with human readable time and creates a machine readable one by applying natural
+C<DateTime::Natural::Parse> exports a function, C<natural_parse()>, by default which takes a
+string with a human readable date/time and creates a machine readable one by applying natural
 parsing logic.
 
-This documentation will be further extended to include the details of valid human
-readable input grammar.
+=head1 FUNCTIONS
 
-Meanwhile, L<http://www.rubyinside.com/chronic-natural-date-parsing-for-ruby-229.html>
-serves some example input.
+=head2 natural_parse
+
+Creates a C<DateTime> object from a human readable date/time string.
+
+ $dt = natural_parse($date_string);
+
+Returns a C<DateTime> object.
+
+=head1 EXAMPLES
+
+Below are some examples of human readable date/time input:
+
+thursday
+november
+friday 13:00
+mon 2:35
+4pm
+6 in the morning
+friday 1pm
+sat 7 in the evening
+yesterday
+today
+tomorrow
+this tuesday
+next month
+this morning
+this second
+yesterday at 4:00
+last friday at 20:00
+last week tuesday
+tomorrow at 6:45pm
+afternoon yesterday
+thursday last week
+
+=head1 SEE ALSO
+
+L<DateTime>, L<http://datetime.perl.org/>  
 
 =head1 AUTHOR
 

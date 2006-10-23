@@ -10,6 +10,7 @@ my $build = Module::Build->new
    module_name => 'DateTime::Natural::Parse',
    dist_author => 'Steven Schubiger <schubiger@cpan.org>',
    dist_version_from => 'lib/DateTime/Natural/Parse.pm',
+   requires => { 'DateTime' => 0 },
    build_requires => { 'Test::More' => 0 },	       
    recommends => {
                    'Test::Pod' => '1.14',

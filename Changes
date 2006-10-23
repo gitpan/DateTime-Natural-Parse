@@ -1,5 +1,13 @@
 Revision history for Perl extension DateTime::Natural::Parse.
 
-0.01 2004/02/09
+0.02 Mon Oct 23 23:22:41 CEST 2006
+
+ - DateTime has been added to the dependencies list.
+ 
+ - natural_parse() returns a DateTime object [Clayton L. Scott <clscott@cpan.org>]
+ 
+ - Extended documentation to include some example human readable time strings.
+
+0.01 Sun Oct 22 22:15:54 CEST 2006
 
  - Initial version.

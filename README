@@ -1,23 +1,35 @@
 NAME
-    DateTime::Natural::Parse - Create machine readable time with natural
-    parsing logic
+    DateTime::Natural::Parse - Create machine readable date/time with
+    natural parsing logic
 
 SYNOPSIS
      use DateTime::Natural::Parse qw(natural_parse);
 
-     print natural_parse($date_string);
+     $dt = natural_parse($date_string);
 
 DESCRIPTION
-    "DateTime::Natural::Parse" exports a function, natural_parse(), by
-    default which takes a string with human readable time and creates a
-    machine readable one by applying natural parsing logic.
+    "DateTime::Natural::Parse" exports a function, "natural_parse()", by
+    default which takes a string with a human readable date/time and creates
+    a machine readable one by applying natural parsing logic.
 
-    This documentation will be further extended to include the details of
-    valid human readable input grammar.
+FUNCTIONS
+  natural_parse
+    Creates a "DateTime" object from a human readable date/time string.
 
-    Meanwhile,
-    <http://www.rubyinside.com/chronic-natural-date-parsing-for-ruby-229.htm
-    l> serves some example input.
+     $dt = natural_parse($date_string);
+
+    Returns a "DateTime" object.
+
+EXAMPLES
+    Below are some examples of human readable date/time input:
+
+    thursday november friday 13:00 mon 2:35 4pm 6 in the morning friday 1pm
+    sat 7 in the evening yesterday today tomorrow this tuesday next month
+    this morning this second yesterday at 4:00 last friday at 20:00 last
+    week tuesday tomorrow at 6:45pm afternoon yesterday thursday last week
+
+SEE ALSO
+    DateTime, <http://datetime.perl.org/>
 
 AUTHOR
     Steven Schubiger <schubiger@cpan.org>
