@@ -8,7 +8,7 @@ use DateTime;
 
 our ($VERSION, @EXPORT_OK);
 
-$VERSION = '0.02';
+$VERSION = '0.03';
 @EXPORT_OK = qw(natural_parse);
 
 sub natural_parse {
@@ -27,12 +27,12 @@ sub natural_parse {
         print "$tokens[$i]\n" if $DEBUG;
 
         my %weekdays = (Monday    => 1,
-	                Tuesday   => 2,
-		        Wednesday => 3,
-		        Thursday  => 4,
-		        Friday    => 5,
-		        Saturday  => 6,
-		        Sunday    => 0);
+                        Tuesday   => 2,
+        	        Wednesday => 3,
+        	        Thursday  => 4,
+        	        Friday    => 5,
+        	        Saturday  => 6,
+          	        Sunday    => 0);
 
         my %months = (January   => 1,
              	      February  => 2,
@@ -62,7 +62,7 @@ sub natural_parse {
 
 	no warnings 'uninitialized';
 	
-        if ($tokens[$i] =~ /^(?:morning|afternoon|evening)$/) {
+        if ($tokens[$i] =~ /^(?:morning|afternoon|evening)$/i) {
 	    my $hour_token;
 	    if ($tokens[$i-3] =~ /\d/ and $tokens[$i-2] =~ /^in$/i and $tokens[$i-1] =~ /^the$/i) {
 		$hour_token = $tokens[$i-3];
@@ -77,16 +77,16 @@ sub natural_parse {
 	    $min = '00';
         }
 
-        if ($tokens[$i] eq 'at') {
+        if ($tokens[$i] =~ /^at$/i) {
 	    next;
-        } elsif ($tokens[$i] =~ /^(\d{1,2})(:\d{2})?(am|pm)?$/) {
+        } elsif ($tokens[$i] =~ /^(\d{1,2})(:\d{2})?(am|pm)?$/i) {
             my $hour_token = $1; my $min_token = $2;
 	    my $timeframe = $3;
 	    $hour = $hour_token; 
 	    $min_token =~ s!:!!;
 	    $min  = $min_token || '00';
 	    if ($timeframe) {	        
-	        if ($timeframe eq 'pm') {
+	        if ($timeframe =~ /^pm$/i) {
                     $hour_token += 12;
                     $hour = $hour_token;
 	            $min  = '00' unless $min_token;
@@ -94,7 +94,7 @@ sub natural_parse {
 	    }
         }
     
-        if ($tokens[$i] =~ /^(\d{1,2})(?:st|nd|rd|th)$/) {
+        if ($tokens[$i] =~ /^(\d{1,2})(?:st|nd|rd|th)$/i) {
 	    $day = $1;
         }
 
@@ -257,33 +257,38 @@ Creates a C<DateTime> object from a human readable date/time string.
 
  $dt = natural_parse($date_string);
 
+ $dt = natural_parse($date_string, { debug => 1 });
+
+The options hash may contain the string 'debug' with a boolean value (0/1).
+Will output each token that is analysed with a trailing newline.
+
 Returns a C<DateTime> object.
 
 =head1 EXAMPLES
 
 Below are some examples of human readable date/time input:
 
-thursday
-november
-friday 13:00
-mon 2:35
-4pm
-6 in the morning
-friday 1pm
-sat 7 in the evening
-yesterday
-today
-tomorrow
-this tuesday
-next month
-this morning
-this second
-yesterday at 4:00
-last friday at 20:00
-last week tuesday
-tomorrow at 6:45pm
-afternoon yesterday
-thursday last week
+ thursday
+ november
+ friday 13:00
+ mon 2:35
+ 4pm
+ 6 in the morning
+ friday 1pm
+ sat 7 in the evening
+ yesterday
+ today
+ tomorrow
+ this tuesday
+ next month
+ this morning
+ this second
+ yesterday at 4:00
+ last friday at 20:00
+ last week tuesday
+ tomorrow at 6:45pm
+ afternoon yesterday
+ thursday last week
 
 =head1 SEE ALSO
 

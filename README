@@ -18,15 +18,37 @@ FUNCTIONS
 
      $dt = natural_parse($date_string);
 
+     $dt = natural_parse($date_string, { debug => 1 });
+
+    The options hash may contain the string 'debug' with a boolean value
+    (0/1). Will output each token that is analysed with a trailing newline.
+
     Returns a "DateTime" object.
 
 EXAMPLES
     Below are some examples of human readable date/time input:
 
-    thursday november friday 13:00 mon 2:35 4pm 6 in the morning friday 1pm
-    sat 7 in the evening yesterday today tomorrow this tuesday next month
-    this morning this second yesterday at 4:00 last friday at 20:00 last
-    week tuesday tomorrow at 6:45pm afternoon yesterday thursday last week
+     thursday
+     november
+     friday 13:00
+     mon 2:35
+     4pm
+     6 in the morning
+     friday 1pm
+     sat 7 in the evening
+     yesterday
+     today
+     tomorrow
+     this tuesday
+     next month
+     this morning
+     this second
+     yesterday at 4:00
+     last friday at 20:00
+     last week tuesday
+     tomorrow at 6:45pm
+     afternoon yesterday
+     thursday last week
 
 SEE ALSO
     DateTime, <http://datetime.perl.org/>

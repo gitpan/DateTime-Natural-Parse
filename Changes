@@ -1,5 +1,11 @@
 Revision history for Perl extension DateTime::Natural::Parse.
 
+0.03 Tue Oct 24 01:25:03 CEST 2006
+ 
+ - Appended the i(ncasesensitive) Modifier to a few regular expressions.
+
+ - Fixed the broken newlines for the example documentation.
+
 0.02 Mon Oct 23 23:22:41 CEST 2006
 
  - DateTime has been added to the dependencies list.
