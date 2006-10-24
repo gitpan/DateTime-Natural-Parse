@@ -28,6 +28,7 @@ FUNCTIONS
 EXAMPLES
     Below are some examples of human readable date/time input:
 
+  Simple
      thursday
      november
      friday 13:00
@@ -49,6 +50,15 @@ EXAMPLES
      tomorrow at 6:45pm
      afternoon yesterday
      thursday last week
+
+  Complex
+     3 years ago
+     5 months before now
+     7 hours ago
+     7 days from now
+     in 3 hours
+     1 year ago tomorrow
+     3 months ago saturday at 5:00pm
 
 SEE ALSO
     DateTime, <http://datetime.perl.org/>

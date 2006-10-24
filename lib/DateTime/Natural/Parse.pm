@@ -8,7 +8,7 @@ use DateTime;
 
 our ($VERSION, @EXPORT_OK);
 
-$VERSION = '0.03';
+$VERSION = '0.04';
 @EXPORT_OK = qw(natural_parse);
 
 sub natural_parse {
@@ -61,7 +61,58 @@ sub natural_parse {
 	                 12 => 31);
 
 	no warnings 'uninitialized';
-	
+
+	if ($tokens[$i+2] =~ /^ago$/i) {
+	    my @new_tokens = splice(@tokens, $i, 3);
+	    if ($new_tokens[1] =~ /^hour(?:s)?$/i) {
+	        $hour -= $new_tokens[0];
+	    }
+	    if ($new_tokens[1] =~ /^day(?:s)?$/i) {
+	        $day -= $new_tokens[0];
+	    }
+	    if ($new_tokens[1] =~ /^week(?:s)?$/i) {
+		$day -= 7 * $new_tokens[0];
+	    }
+	    if ($new_tokens[1] =~ /^month(?:s)?$/i) {
+	        $month -= $new_tokens[0];
+            }
+	    if ($new_tokens[1] =~ /^year(?:s)?$/i) {
+	        $year -= $new_tokens[0];
+	    }
+	}
+
+	if ($tokens[$i+3] =~ /^now$/i) {
+	    my @new_tokens = splice(@tokens, $i, 4);
+	    if ($new_tokens[1] =~ /^day(?:s)?$/i) {
+	        if ($new_tokens[2] =~ /^before$/i) {
+		    $day -= $new_tokens[0];
+		} elsif ($new_tokens[2] =~ /^from$/i) {
+		    $day += $new_tokens[0];
+		}
+	    }
+	    if ($new_tokens[1] =~ /^week(?:s)?$/i) {
+	        if ($new_tokens[2] =~ /^before$/i) {
+		    $day -= 7 * $new_tokens[0];
+		} elsif ($new_tokens[2] =~ /^from$/i) {
+		    $day += 7 * $new_tokens[0];
+		}
+	    }
+	    if ($new_tokens[1] =~ /^month(?:s)?$/i) {
+                if ($new_tokens[2] =~ /^before$/i) {
+	            $month -= $new_tokens[0];
+		} elsif ($new_tokens[2] =~ /^from$/i) {
+		    $month += $new_tokens[0];
+		}
+	    }
+	    if ($new_tokens[1] =~ /^year(?:s)?$/i) {
+		if ($new_tokens[2] =~ /^before$/i) {
+		    $year -= $new_tokens[0];
+		} elsif ($new_tokens[2] =~ /^from$/i) {
+		    $year += $new_tokens[0];
+		}
+	    }
+	}
+
         if ($tokens[$i] =~ /^(?:morning|afternoon|evening)$/i) {
 	    my $hour_token;
 	    if ($tokens[$i-3] =~ /\d/ and $tokens[$i-2] =~ /^in$/i and $tokens[$i-1] =~ /^the$/i) {
@@ -79,7 +130,7 @@ sub natural_parse {
 
         if ($tokens[$i] =~ /^at$/i) {
 	    next;
-        } elsif ($tokens[$i] =~ /^(\d{1,2})(:\d{2})?(am|pm)?$/i) {
+        } elsif ($tokens[$i] =~ /^(\d{1,2})(:\d{2})?\s?(am|pm)?$/i) {
             my $hour_token = $1; my $min_token = $2;
 	    my $timeframe = $3;
 	    $hour = $hour_token; 
@@ -161,6 +212,10 @@ sub natural_parse {
 		    $month++;
 		    last;
 	        }
+		if ($tokens[$i] =~ /^year$/i) {
+		    $year++;
+		    last;
+	        }
             }
 	}	   
 	
@@ -176,36 +231,32 @@ sub natural_parse {
 		    last;
 		}
 	    }
-	    
             if ($tokens[$i] =~ /^week$/i) {
                 if (exists $weekdays{ucfirst(lc($tokens[$i+1]))}) {
 		    my $weekday = ucfirst(lc($tokens[$i+1]));
 		    my $days_diff = $wday + (7 - $weekdays{$weekday});
 		    $day -= $days_diff; $buffer = '';
-		    last;
 		} elsif (exists $weekdays{ucfirst(lc($tokens[$i-2]))}) {
 		    my $weekday = ucfirst(lc($tokens[$i-2]));
 		    my $days_diff = $wday + (7 - $weekdays{$weekday});
 		    $day -= $days_diff; $buffer = '';
-		    last;
 		}
 	    }    
-
             if ($tokens[$i] =~ /^month$/i) {
                 $month--;
-		last;
+	    }
+	    if ($tokens[$i] =~ /^year$/i) {
+		$year--;
 	    }
 	}
 
         if ($day > $monthdays{$month}) {
 	    my $days_next_month = $day - $monthdays{$month};
 	    $month++; $day = $days_next_month;
-	    last;
 	} elsif ($day < 1) {
-	    # this branch needs some provement XXX
+	    # XXX this branch needs some provement 
 	    my $days_last_month = $monthdays{$month-1} - $day;
 	    $month--; $day = $days_last_month;
-	    last;
 	}
 	
         if ($tokens[$i] =~ /^(?:today|yesterday|tomorrow)$/i) {
@@ -226,7 +277,6 @@ sub natural_parse {
                            hour   => $hour,
                            minute => $min,
                            second => $sec);
-
     return $dt;
 }
 
@@ -268,6 +318,8 @@ Returns a C<DateTime> object.
 
 Below are some examples of human readable date/time input:
 
+=head2 Simple
+
  thursday
  november
  friday 13:00
@@ -289,6 +341,16 @@ Below are some examples of human readable date/time input:
  tomorrow at 6:45pm
  afternoon yesterday
  thursday last week
+
+=head2 Complex
+
+ 3 years ago
+ 5 months before now
+ 7 hours ago
+ 7 days from now
+ in 3 hours
+ 1 year ago tomorrow
+ 3 months ago saturday at 5:00pm
 
 =head1 SEE ALSO
 

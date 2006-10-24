@@ -1,6 +1,6 @@
 ---
 name: DateTime-Natural-Parse
-version: 0.03
+version: 0.04
 author:
   - 'Steven Schubiger <schubiger@cpan.org>'
 abstract: Create machine readable date/time with natural parsing logic
@@ -19,6 +19,6 @@ meta-spec:
 provides:
   DateTime::Natural::Parse:
     file: lib/DateTime/Natural/Parse.pm
-    version: 0.03
+    version: 0.04
 resources:
   license: http://dev.perl.org/licenses/
